@@ -2,12 +2,12 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     display: flex;
-    flex-direction: column; /* 垂直排列，为footer留出空间 */
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     margin: 0;
-    padding: 20px 0; /* 给上下留出一些空间 */
+    padding: 20px 0;
     background-color: #f4f7f9;
     box-sizing: border-box;
 }
@@ -52,54 +52,85 @@ h1 {
     gap: 10px;
 }
 
-/* 新增：货币选择区域的样式 */
+/* --- 以下是本次核心改动 --- */
+
+/* 货币选择器容器 (相对定位，为隐藏的select提供坐标) */
 .currency-selector {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    width: 85px; /* 固定宽度，让输入框对齐 */
-    cursor: pointer;
     position: relative;
+    width: 120px; /* 加宽以容纳国旗和文字 */
+    flex-shrink: 0; /* 防止被压缩 */
 }
 
-/* 新增：下拉选择框的样式 */
-.currency-select {
-    width: 100%;
+/* 视觉上可见的、可点击的区域 */
+.currency-picker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     padding: 8px 5px;
     border: 1px solid #ddd;
     border-radius: 8px;
-    font-size: 1em;
+    background-color: #f8f9fa;
+    text-align: center;
+    height: 60px; /* 固定高度，让UI更整齐 */
+    box-sizing: border-box;
+}
+
+/* 国旗图片 */
+.currency-flag {
+    width: 32px;
+    height: 24px;
+    margin-bottom: 4px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+/* 中文名 */
+.currency-name-zh {
+    font-size: 14px;
     font-weight: bold;
     color: #333;
-    background-color: #f8f9fa;
+    line-height: 1;
+}
+
+/* 英文缩写 */
+.currency-name-en {
+    font-size: 11px;
+    color: #888;
+    line-height: 1;
+    margin-top: 4px;
+}
+
+/* 真正的下拉框，透明覆盖在上方，响应点击事件 */
+.currency-select {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0; /* 完全透明 */
     cursor: pointer;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    text-align: center;
 }
-.currency-select:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
-}
+
+/* --- 核心改动结束 --- */
 
 /* 金额输入框 */
 .currency-input {
     flex-grow: 1;
     padding: 12px;
+    height: 60px; /* 与左侧选择器高度保持一致 */
     border: 1px solid #ddd;
     border-radius: 8px;
-    font-size: 1.1em;
+    font-size: 1.2em; /* 稍微调大字体 */
     outline: none;
     transition: border-color 0.3s, box-shadow 0.3s;
     text-align: right;
+    box-sizing: border-box;
     -moz-appearance: textfield;
 }
 .currency-input::-webkit-outer-spin-button,
 .currency-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+    -webkit-appearance: none; margin: 0;
 }
 .currency-input:focus {
     border-color: #007bff;
@@ -109,6 +140,7 @@ h1 {
 /* 重置按钮 */
 .reset-btn {
     padding: 10px 15px;
+    height: 60px; /* 与输入框高度保持一致 */
     border: none;
     background-color: #6c757d;
     color: white;
@@ -116,15 +148,13 @@ h1 {
     cursor: pointer;
     font-size: 0.9em;
     transition: background-color 0.3s;
+    box-sizing: border-box;
 }
 .reset-btn:hover {
     background-color: #5a6268;
 }
-.reset-btn:active {
-    transform: scale(0.98);
-}
 
-/* 新增：页脚样式 */
+/* 页脚样式 */
 .footer {
     margin-top: 25px;
     font-size: 0.8em;
