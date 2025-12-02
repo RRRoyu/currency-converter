@@ -54,10 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const cacheKey = 'currency_cache';
         const cachedData = JSON.parse(localStorage.getItem(cacheKey));
         const now = new Date().getTime();
-        const 12Hour = 60 * 60 * 1000*12; // 1小时的毫秒数
+        const oneHour = 60 * 60 * 1000; // 1小时的毫秒数
 
         // 如果有缓存，并且缓存未超过1小时，则使用缓存
-        if (cachedData && (now - cachedData.timestamp < 12Hour)) {
+        if (cachedData && (now - cachedData.timestamp < oneHour)) {
             console.log("Using cached rates.");
             return cachedData.data;
         }
