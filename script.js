@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- 配置区 ---
-    const API_KEY = 'YOUR_API_KEY'; // <--- 再次确认这里已替换成你自己的API KEY
+    const API_KEY = '412dcc822811181a00e03df2'; // <--- 再次确认这里已替换成你自己的API KEY
     const BASE_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/USD`;
     const defaultCurrencies = ['CNY', 'JPY', 'USD', 'EUR', 'KRW'];
 
