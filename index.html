@@ -6,75 +6,119 @@
     <title>实时汇率转换工具</title>
     <style>
         body {
+            background: #ffffff;
             font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 20px;
-        }
-        .row {
-            margin: 12px 0;
-            display: flex;
-            align-items: center;
-        }
-        input {
-            width: 200px;
-            padding: 6px;
-            margin-right: 12px;
-        }
-        button {
-            padding: 6px 10px;
+            max-width: 450px;
+            margin: 20px auto;
+            padding: 10px;
         }
         h2 {
-            margin-bottom: 30px;
+            margin-bottom: 12px;
+            font-size: 20px;
+            text-align: center;
+        }
+        .row {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+            font-size: 14px;
+        }
+        .label {
+            width: 70px;
+        }
+        input {
+            flex: 1;
+            padding: 4px;
+            font-size: 14px;
+        }
+        button {
+            margin-left: 6px;
+            padding: 4px 8px;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
 
-<h2>实时汇率转换工具（4货币）</h2>
+<h2>实时汇率转换（5种）</h2>
 
 <div class="row">
-    <span>USD 美元：</span>
-    <input id="usd" type="number" value="1" step="0.01">
-    <button onclick="setToOne('usd')">1</button>
-</div>
-
-<div class="row">
-    <span>CNY 人民币：</span>
-    <input id="cny" type="number" step="0.01">
+    <span class="label">人民币 CNY</span>
+    <input id="cny" type="number" value="1" step="0.01">
     <button onclick="setToOne('cny')">1</button>
 </div>
 
 <div class="row">
-    <span>JPY 日元：</span>
+    <span class="label">日元 JPY</span>
     <input id="jpy" type="number" step="0.01">
     <button onclick="setToOne('jpy')">1</button>
 </div>
 
 <div class="row">
-    <span>EUR 欧元：</span>
+    <span class="label">韩元 KRW</span>
+    <input id="krw" type="number" step="0.01">
+    <button onclick="setToOne('krw')">1</button>
+</div>
+
+<div class="row">
+    <span class="label">美元 USD</span>
+    <input id="usd" type="number" step="0.01">
+    <button onclick="setToOne('usd')">1</button>
+</div>
+
+<div class="row">
+    <span class="label">欧元 EUR</span>
     <input id="eur" type="number" step="0.01">
     <button onclick="setToOne('eur')">1</button>
 </div>
 
 <script>
     let rates = {};
-    const currencyIds = ["usd", "cny", "jpy", "eur"];
-    const symbols = { usd:"USD", cny:"CNY", jpy:"JPY", eur:"EUR" };
+    const CACHE_KEY = "exchange_rates_cache";
+    const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 小时
 
+    const currencyIds = ["cny", "jpy", "krw", "usd", "eur"];
+    const symbols = { cny:"CNY", jpy:"JPY", krw:"KRW", usd:"USD", eur:"EUR" };
+
+    // 载入汇率：优先使用缓存
     async function loadRates() {
+        const cached = localStorage.getItem(CACHE_KEY);
+
+        if (cached) {
+            const data = JSON.parse(cached);
+            const age = Date.now() - data.timestamp;
+
+            if (age < CACHE_DURATION) {
+                console.log("使用缓存汇率");
+                rates = data.rates;
+                convertFrom("cny");
+                return;
+            }
+        }
+
+        console.log("请求 API 获取最新汇率");
         const res = await fetch("https://api.exchangerate.host/latest?base=USD");
         const data = await res.json();
+
         rates = data.rates;
-        convertFrom("usd");
+
+        // 写入缓存
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            timestamp: Date.now(),
+            rates: rates
+        }));
+
+        convertFrom("cny");
     }
 
     function convertFrom(srcId) {
         let baseSymbol = symbols[srcId];
-        let baseValue = parseFloat(document.getElementById(srcId).value) || 0;
+        let value = parseFloat(document.getElementById(srcId).value) || 0;
 
-        let usdValue = baseSymbol === "USD" ? baseValue : baseValue / rates[baseSymbol];
+        // 转为美元
+        let usdValue = baseSymbol === "USD" ? value : value / rates[baseSymbol];
 
+        // 计算其它货币
         currencyIds.forEach(id => {
             if (id !== srcId) {
                 let symbol = symbols[id];
@@ -83,15 +127,18 @@
         });
     }
 
+    // 输入事件监听
     currencyIds.forEach(id => {
         document.getElementById(id).addEventListener("input", () => convertFrom(id));
     });
 
+    // 按钮：设为 1
     function setToOne(id) {
         document.getElementById(id).value = 1;
         convertFrom(id);
     }
 
+    // 初始化
     loadRates();
 </script>
 
