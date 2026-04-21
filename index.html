@@ -1,646 +1,693 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>智能数独 · 自定义模式与动态排除</title>
-    <style>
-        * {
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>数独 · 灵动档案</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        body {
-            background: linear-gradient(145deg, #2c3e4e 0%, #1a2a36 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
+    body {
+      font-family: system-ui, -apple-system, 'Helvetica Neue', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+      background: #f5f7fb;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      margin: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        /* 主游戏面板 */
-        .game-container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(2px);
-            border-radius: 64px;
-            padding: 20px 20px 30px;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.2);
-        }
+    /* 主卡片 —— 灵动岛风格毛玻璃 */
+    .game-container {
+      max-width: 480px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 36px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 6px 12px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+      padding: 24px 20px 30px;
+      transition: all 0.2s ease;
+    }
 
-        .sudoku-wrapper {
-            background: #fef9e8;
-            border-radius: 36px;
-            padding: 20px;
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 12px 28px rgba(0, 0, 0, 0.2);
-        }
+    h1 {
+      font-weight: 600;
+      font-size: 2.1rem;
+      letter-spacing: -0.02em;
+      color: #1c1c1e;
+      margin-bottom: 6px;
+      padding-left: 6px;
+    }
 
-        canvas {
-            display: block;
-            margin: 0 auto;
-            background-color: #fff7ef;
-            border-radius: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            width: 100%;
-            height: auto;
-        }
+    .subhead {
+      font-size: 0.9rem;
+      color: #8e8e93;
+      margin-bottom: 20px;
+      padding-left: 6px;
+      font-weight: 400;
+      border-left: 4px solid #007aff;
+      padding-left: 14px;
+    }
 
-        /* 控制栏 & 模式区 */
-        .control-bar {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            margin: 24px 20px 20px;
-            flex-wrap: wrap;
-        }
+    /* ----- 首页/模式选择 ----- */
+    .mode-select-screen {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
 
-        button {
-            background: #2c3e4e;
-            border: none;
-            padding: 12px 24px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            border-radius: 60px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 5px 0 #121a1f;
-            font-family: inherit;
-        }
+    .mode-card {
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 24px 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      transition: transform 0.15s;
+    }
 
-        button:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #121a1f;
-        }
+    .mode-card:active {
+      transform: scale(0.99);
+      background: rgba(255, 255, 255, 0.7);
+    }
 
-        .mode-active {
-            background: #e67e22;
-            box-shadow: 0 5px 0 #b45d1a;
-            color: white;
-        }
+    .mode-title {
+      font-size: 1.7rem;
+      font-weight: 600;
+      color: #1c1c1e;
+      margin-bottom: 6px;
+    }
 
-        .reset-btn {
-            background: #27ae60;
-            box-shadow: 0 5px 0 #1e7a46;
-        }
+    .mode-desc {
+      color: #636366;
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
 
-        .clear-btn {
-            background: #e67e22;
-        }
+    .difficulty-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
 
-        /* 数字候选栏（即将填入的数字） */
-        .digits-panel {
-            background: #2c3e4e;
-            margin: 10px 20px 0;
-            border-radius: 60px;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 6px 12px rgba(0,0,0,0.2);
-        }
+    .difficulty-btn {
+      flex: 1;
+      background: rgba(240, 242, 245, 0.7);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      border-radius: 60px;
+      padding: 10px 0;
+      font-weight: 500;
+      color: #3a3a3c;
+      backdrop-filter: blur(5px);
+      transition: all 0.15s;
+      text-align: center;
+      font-size: 0.95rem;
+    }
 
-        .digit-btn {
-            background: #fdf8ed;
-            color: #1e2f3a;
-            width: 56px;
-            height: 56px;
-            font-size: 28px;
-            font-weight: bold;
-            border-radius: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 0 #b0a088;
-            transition: 0.05s linear;
-            cursor: pointer;
-            font-family: monospace;
-        }
+    .difficulty-btn.selected {
+      background: #007aff;
+      color: white;
+      box-shadow: 0 4px 8px rgba(0, 122, 255, 0.2);
+    }
 
-        .digit-btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 1px 0 #b0a088;
-        }
+    .btn {
+      background: #007aff;
+      color: white;
+      border: none;
+      border-radius: 60px;
+      padding: 16px 20px;
+      font-weight: 600;
+      font-size: 1.2rem;
+      width: 100%;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 6px 14px rgba(0, 122, 255, 0.25);
+      transition: all 0.15s;
+      cursor: pointer;
+      -webkit-appearance: none;
+      border: 0.5px solid rgba(255, 255, 255, 0.3);
+    }
 
-        .digit-btn.disabled-digit {
-            background: #c9c1b0;
-            color: #6b5e4e;
-            box-shadow: 0 4px 0 #8f7e66;
-            filter: grayscale(0.2);
-            cursor: not-allowed;
-            opacity: 0.65;
-            transform: none;
-            pointer-events: none;
-        }
+    .btn:active {
+      transform: scale(0.98);
+      background: #005bbf;
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+    }
 
-        .digit-btn.selected-digit {
-            background: #f39c12;
-            color: white;
-            box-shadow: 0 4px 0 #c56c00;
-        }
+    .btn.secondary {
+      background: rgba(120, 120, 128, 0.15);
+      color: #1c1c1e;
+      box-shadow: none;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
 
-        .info-text {
-            text-align: center;
-            color: #ecf0f1;
-            font-weight: 500;
-            margin-top: 16px;
-            font-size: 0.85rem;
-            text-shadow: 0 1px 2px black;
-        }
+    .btn.secondary:active {
+      background: rgba(120, 120, 128, 0.25);
+    }
 
-        .custom-area {
-            background: #1e2e38;
-            border-radius: 48px;
-            padding: 12px 20px;
-            margin: 5px 20px 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
+    .save-load-bar {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
 
-        .custom-input {
-            flex: 3;
-            background: #fef3da;
-            border: none;
-            padding: 12px 18px;
-            border-radius: 60px;
-            font-family: monospace;
-            font-size: 1rem;
-            font-weight: bold;
-            text-align: center;
-            letter-spacing: 2px;
-        }
+    /* 存档槽位 */
+    .slot-container {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 10px 0 4px;
+    }
 
-        .custom-label {
-            color: #ffe1b3;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
+    .slot-btn {
+      flex: 1 0 calc(20% - 8px);
+      min-width: 55px;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 20px;
+      padding: 12px 0;
+      font-weight: 600;
+      color: #1c1c1e;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      transition: 0.1s;
+      text-align: center;
+    }
 
-        @media (max-width: 550px) {
-            .digit-btn {
-                width: 45px;
-                height: 45px;
-                font-size: 24px;
-            }
-            button {
-                padding: 8px 16px;
-                font-size: 0.9rem;
-            }
-            .custom-input {
-                font-size: 0.8rem;
-            }
-        }
-    </style>
+    .slot-btn:active {
+      background: #e5e5ea;
+    }
+
+    /* 游戏主屏 */
+    .game-screen {
+      display: none;
+    }
+
+    .board-wrapper {
+      display: flex;
+      justify-content: center;
+      margin: 8px 0 12px;
+    }
+
+    table.sudoku-board {
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(5px);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.02);
+    }
+
+    .sudoku-board td {
+      border: 1px solid rgba(60, 60, 67, 0.15);
+      width: 11vw;
+      height: 11vw;
+      max-width: 52px;
+      max-height: 52px;
+      min-width: 38px;
+      min-height: 38px;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 1.7rem;
+      font-weight: 500;
+      color: #1c1c1e;
+      background: rgba(255, 255, 255, 0.3);
+      transition: background 0.1s;
+      padding: 0;
+    }
+
+    /* 粗宫格边框 */
+    .sudoku-board tr:nth-child(3) td,
+    .sudoku-board tr:nth-child(6) td {
+      border-bottom: 3px solid #8e8e93;
+    }
+    .sudoku-board td:nth-child(3),
+    .sudoku-board td:nth-child(6) {
+      border-right: 3px solid #8e8e93;
+    }
+
+    .sudoku-board td.selected-cell {
+      background: rgba(0, 122, 255, 0.2);
+      box-shadow: inset 0 0 0 3px #007aff;
+    }
+
+    .sudoku-board td.highlight-related {
+      background: rgba(0, 122, 255, 0.08);
+    }
+
+    .sudoku-board td.fixed-digit {
+      color: #1c1c1e;
+      font-weight: 600;
+    }
+
+    .sudoku-board td.user-digit {
+      color: #007aff;
+      font-weight: 500;
+    }
+
+    /* 候选数字条 (下方) */
+    .number-palette {
+      display: flex;
+      justify-content: space-between;
+      margin: 16px 2px 20px;
+      gap: 6px;
+    }
+
+    .num-btn {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(8px);
+      border-radius: 60px;
+      padding: 12px 0;
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #1c1c1e;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      border: 1px solid rgba(255,255,255,0.9);
+      transition: all 0.1s;
+    }
+
+    .num-btn.disabled-num {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .num-btn:active {
+      background: #007aff;
+      color: white;
+    }
+
+    .action-bar {
+      display: flex;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .icon-btn {
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 40px;
+      padding: 12px 18px;
+      font-weight: 500;
+      flex: 1;
+      text-align: center;
+      color: #1c1c1e;
+    }
+
+    .back-home {
+      margin-top: 18px;
+    }
+
+    .status-text {
+      font-size: 0.9rem;
+      color: #8e8e93;
+      margin: 10px 0 4px;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .flex-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .mt-3 {
+      margin-top: 12px;
+    }
+  </style>
 </head>
 <body>
-<div>
-    <div class="game-container">
-        <div class="sudoku-wrapper">
-            <canvas id="sudokuCanvas" width="450" height="450" style="width:100%; height:auto; max-width:450px; aspect-ratio:1/1"></canvas>
-        </div>
+<div class="game-container">
+  <h1>数独·柔焦</h1>
+  <div class="subhead" id="subheadText">模式选择</div>
 
-        <!-- 自定义模式区域 -->
-        <div class="custom-area">
-            <span class="custom-label">✏️ 自定义模式</span>
-            <input type="text" id="customPuzzleInput" class="custom-input" placeholder="例如: 530070000600195000098000060800060003400803001700020006060000280000419005000080079" maxlength="81">
-            <button id="applyCustomBtn" style="background:#f1c40f; color:#2c3e4e; box-shadow:0 4px 0 #b67e0a;">📌 载入并开始</button>
-        </div>
-
-        <!-- 模式切换 -->
-        <div class="control-bar">
-            <button id="normalModeBtn" class="mode-active">🌟 经典模式</button>
-            <button id="customModeBtn">🎨 自定义模式</button>
-            <button id="resetGameBtn" class="reset-btn">🔄 重置</button>
-            <button id="clearBoardBtn" class="clear-btn">🗑️ 清空所有格</button>
-        </div>
-
-        <!-- 下方数字栏 : 即将填入的数字 -->
-        <div class="digits-panel" id="digitsPanel">
-            <!-- 动态生成1-9 -->
-        </div>
-        <div class="info-text">
-            💡 提示：点击格子后，下方数字栏会 <strong>自动排除</strong> 同行/列/宫已存在的数字。<br>
-            ✨ 灰色数字不可选，点击有效数字即可填入（自定义模式下仅可编辑初始空格）
-        </div>
+  <!-- 首页：模式选择 -->
+  <div id="homeScreen" class="mode-select-screen">
+    <div class="mode-card" id="classicModeCard">
+      <div class="mode-title">经典</div>
+      <div class="mode-desc">随机谜题 · 三种难度</div>
+      <div class="difficulty-row" id="difficultyGroup">
+        <div class="difficulty-btn selected" data-diff="easy">简单</div>
+        <div class="difficulty-btn" data-diff="medium">中等</div>
+        <div class="difficulty-btn" data-diff="hard">困难</div>
+      </div>
+      <button class="btn mt-3" id="startClassicBtn">开始经典</button>
     </div>
+    <div class="mode-card" id="customModeCard">
+      <div class="mode-title">自定义</div>
+      <div class="mode-desc">空白盘面 · 自由创造</div>
+      <button class="btn secondary" id="startCustomBtn">开始自定义</button>
+    </div>
+    <!-- 存档/读档区域 (首页可见) -->
+    <div style="margin-top: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <span style="font-weight: 600; color: #1c1c1e;">存档位</span>
+        <span style="font-size: 0.8rem; color: #8e8e93;">点击槽位存档/读档</span>
+      </div>
+      <div class="slot-container" id="slotContainer"></div>
+      <div class="save-load-bar">
+        <button class="icon-btn" id="saveToSlotBtn">保存到选中槽</button>
+        <button class="icon-btn" id="loadFromSlotBtn">读取选中槽</button>
+      </div>
+      <div id="slotFeedback" class="status-text"></div>
+    </div>
+  </div>
+
+  <!-- 游戏主屏幕 -->
+  <div id="gameScreen" class="game-screen">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span id="gameModeLabel" style="font-weight: 600;">经典·简单</span>
+      <button class="icon-btn" id="backHomeBtn" style="padding: 8px 16px; flex:0;">🏠</button>
+    </div>
+    <div class="board-wrapper">
+      <table class="sudoku-board" id="sudokuGrid"></table>
+    </div>
+    <!-- 候选数字条 -->
+    <div class="number-palette" id="numberPalette"></div>
+    <!-- 操作 -->
+    <div class="action-bar">
+      <button class="icon-btn" id="undoBtn">↩️ 撤回</button>
+      <button class="icon-btn" id="clearCellBtn">🧹 清空格</button>
+    </div>
+    <div class="status-text" id="gameStatus"></div>
+  </div>
 </div>
-
 <script>
-    (function(){
-        // ---------- 游戏状态 ----------
-        let board = Array(9).fill().map(() => Array(9).fill(0));     // 当前盘面值 (1-9)
-        let fixedMask = Array(9).fill().map(() => Array(9).fill(false)); // true: 不可编辑（题目固定格）
-        let selectedRow = -1, selectedCol = -1;      // 当前选中的格子
-        let currentMode = "normal";   // "normal" or "custom"
-        
-        // 经典预设题目 (中等难度，优雅开局)
-        const classicPuzzle = [
-            [5,3,0,0,7,0,0,0,0],
-            [6,0,0,1,9,5,0,0,0],
-            [0,9,8,0,0,0,0,6,0],
-            [8,0,0,0,6,0,0,0,3],
-            [4,0,0,8,0,3,0,0,1],
-            [7,0,0,0,2,0,0,0,6],
-            [0,6,0,0,0,0,2,8,0],
-            [0,0,0,4,1,9,0,0,5],
-            [0,0,0,0,8,0,0,7,9]
-        ];
+  (function(){
+    "use strict";
 
-        // ---------- DOM 元素 ----------
-        const canvas = document.getElementById('sudokuCanvas');
-        const ctx = canvas.getContext('2d');
-        const normalBtn = document.getElementById('normalModeBtn');
-        const customBtn = document.getElementById('customModeBtn');
-        const resetBtn = document.getElementById('resetGameBtn');
-        const clearBoardBtn = document.getElementById('clearBoardBtn');
-        const applyCustomBtn = document.getElementById('applyCustomBtn');
-        const customInput = document.getElementById('customPuzzleInput');
-        const digitsPanel = document.getElementById('digitsPanel');
-        
-        let digitButtons = []; // 存储dom元素
+    // ---------- 全局状态 ----------
+    let currentScreen = 'home'; // 'home' 或 'game'
+    let gameMode = null; // 'classic' 或 'custom'
+    let currentDifficulty = 'easy'; 
+    
+    // 数独数据
+    let board = Array(9).fill().map(() => Array(9).fill(0));      // 当前盘面数字 (0表示空)
+    let fixedMask = Array(9).fill().map(() => Array(9).fill(false)); // true表示预设/固定格
+    let history = [];        // 保存历史用于撤回 { row, col, oldVal }
+    let selectedRow = -1, selectedCol = -1;
+    
+    // 存档槽 (5个)
+    let saveSlots = new Array(5).fill(null);
+    let selectedSlotIndex = 0;   // 0-4
 
-        // 辅助函数: 根据行列宫获取当前排除集合 (用于动态更新数字栏可用性)
-        function getExcludedNumbersForCell(row, col) {
-            if (row === -1 || col === -1) return new Set(); // 无选中则无排除
-            
-            const excluded = new Set();
-            // 行
-            for (let c = 0; c < 9; c++) {
-                const val = board[row][c];
-                if (val !== 0) excluded.add(val);
-            }
-            // 列
-            for (let r = 0; r < 9; r++) {
-                const val = board[r][col];
-                if (val !== 0) excluded.add(val);
-            }
-            // 宫
-            const boxRow = Math.floor(row / 3) * 3;
-            const boxCol = Math.floor(col / 3) * 3;
-            for (let i = 0; i < 3; i++) {
-                for (let j = 0; j < 3; j++) {
-                    const val = board[boxRow + i][boxCol + j];
-                    if (val !== 0) excluded.add(val);
-                }
-            }
-            return excluded;
-        }
+    // UI元素
+    const homeScreen = document.getElementById('homeScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const subheadEl = document.getElementById('subheadText');
+    const sudokuGrid = document.getElementById('sudokuGrid');
+    const numberPalette = document.getElementById('numberPalette');
+    const gameModeLabel = document.getElementById('gameModeLabel');
+    const gameStatus = document.getElementById('gameStatus');
+    const slotContainer = document.getElementById('slotContainer');
+    const slotFeedback = document.getElementById('slotFeedback');
+    
+    // 难度按钮
+    const diffBtns = document.querySelectorAll('.difficulty-btn');
+    
+    // ---------- 辅助函数 ----------
+    function updateSubhead(text) { subheadEl.textContent = text; }
+    
+    // 切换屏幕
+    function showHome() {
+      homeScreen.style.display = 'block';
+      gameScreen.style.display = 'none';
+      currentScreen = 'home';
+      updateSubhead('模式选择');
+      renderSlotButtons();
+    }
+    
+    function showGame() {
+      homeScreen.style.display = 'none';
+      gameScreen.style.display = 'block';
+      currentScreen = 'game';
+      let diffText = gameMode === 'classic' ? `· ${currentDifficulty === 'easy'?'简单':currentDifficulty==='medium'?'中等':'困难'}` : '· 自定义';
+      gameModeLabel.textContent = `${gameMode==='classic'?'经典':'自定义'} ${diffText}`;
+      updateSubhead('游戏中');
+      renderBoard();
+      renderNumberPalette();
+    }
 
-        // 更新下方数字栏的禁用/启用样式，基于当前选中格子 + 固定编辑限制
-        function updateDigitsPanelAvailability() {
-            if (selectedRow === -1 || selectedCol === -1) {
-                // 没有选中任何格子: 所有数字按钮可用? 逻辑上无选区时点击数字无意义，但为了体验，全部置为不可选样式但提示?
-                // 优雅处理: 无选中时所有数字不可选（或者保持样式但点击无效）
-                for (let i = 0; i < 9; i++) {
-                    const btn = digitButtons[i];
-                    btn.classList.add('disabled-digit');
-                }
-                return;
-            }
-            
-            // 检查当前格子是否可编辑（固定格子不能填入任何数字）
-            const isFixed = fixedMask[selectedRow][selectedCol];
-            if (isFixed) {
-                // 固定格子不能编辑 => 所有数字按钮禁用
-                for (let i = 0; i < 9; i++) {
-                    digitButtons[i].classList.add('disabled-digit');
-                }
-                return;
-            }
-            
-            // 可编辑格子: 计算排除集合
-            const excludedSet = getExcludedNumbersForCell(selectedRow, selectedCol);
-            for (let num = 1; num <= 9; num++) {
-                const btn = digitButtons[num-1];
-                if (excludedSet.has(num)) {
-                    btn.classList.add('disabled-digit');
-                } else {
-                    btn.classList.remove('disabled-digit');
-                }
-            }
+    // 生成槽位按钮
+    function renderSlotButtons() {
+      let html = '';
+      for (let i=0; i<5; i++) {
+        let hasData = saveSlots[i] !== null;
+        html += `<div class="slot-btn" data-slot="${i}" style="${selectedSlotIndex===i ? 'background:#007aff; color:white;' : ''}">S${i+1}${hasData?'●':''}</div>`;
+      }
+      slotContainer.innerHTML = html;
+      document.querySelectorAll('.slot-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          let idx = parseInt(btn.dataset.slot);
+          selectedSlotIndex = idx;
+          renderSlotButtons();
+          slotFeedback.textContent = `已选中存档槽 S${idx+1}`;
+        });
+      });
+    }
+
+    // 初始化槽位 (从localStorage读取)
+    function loadSlotsFromStorage() {
+      try {
+        let stored = localStorage.getItem('sudoku_slots_v1');
+        if(stored) {
+          let parsed = JSON.parse(stored);
+          if(Array.isArray(parsed) && parsed.length===5) saveSlots = parsed;
         }
-        
-        // 刷新整个canvas绘制 + 高亮选中格 + 高亮冲突(可选扩展) 保持简洁
-        function drawBoard() {
-            const size = 450;
-            const cellSize = size / 9;
-            canvas.width = size;
-            canvas.height = size;
-            ctx.clearRect(0, 0, size, size);
-            
-            // 背景网格
-            ctx.strokeStyle = '#b0a48c';
-            ctx.lineWidth = 1.5;
-            for (let i = 0; i <= 9; i++) {
-                ctx.beginPath();
-                ctx.moveTo(i * cellSize, 0);
-                ctx.lineTo(i * cellSize, size);
-                ctx.stroke();
-                ctx.moveTo(0, i * cellSize);
-                ctx.lineTo(size, i * cellSize);
-                ctx.stroke();
-            }
-            // 粗宫格线
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#4a3729';
-            for (let i = 0; i <= 3; i++) {
-                ctx.beginPath();
-                ctx.moveTo(i * 3 * cellSize, 0);
-                ctx.lineTo(i * 3 * cellSize, size);
-                ctx.stroke();
-                ctx.moveTo(0, i * 3 * cellSize);
-                ctx.lineTo(size, i * 3 * cellSize);
-                ctx.stroke();
-            }
-            
-            // 绘制数字
-            ctx.font = `bold ${Math.floor(cellSize * 0.48)}px "Segoe UI", "Roboto Mono"`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            for (let r = 0; r < 9; r++) {
-                for (let c = 0; c < 9; c++) {
-                    const val = board[r][c];
-                    if (val !== 0) {
-                        const x = c * cellSize + cellSize/2;
-                        const y = r * cellSize + cellSize/2;
-                        // 固定格与用户填入格颜色区分
-                        if (fixedMask[r][c]) {
-                            ctx.fillStyle = "#1e4660";
-                            ctx.fillText(val.toString(), x, y);
-                        } else {
-                            ctx.fillStyle = "#2c7a47";
-                            ctx.fillText(val.toString(), x, y);
-                        }
-                    }
-                }
-            }
-            
-            // 绘制选中高亮
-            if (selectedRow !== -1 && selectedCol !== -1) {
-                ctx.fillStyle = "rgba(241, 196, 15, 0.35)";
-                ctx.fillRect(selectedCol * cellSize, selectedRow * cellSize, cellSize, cellSize);
-                // 加外框
-                ctx.strokeStyle = "#f1c40f";
-                ctx.lineWidth = 3;
-                ctx.strokeRect(selectedCol * cellSize, selectedRow * cellSize, cellSize, cellSize);
-            }
+      } catch(e){}
+      renderSlotButtons();
+    }
+    function saveSlotsToStorage() {
+      localStorage.setItem('sudoku_slots_v1', JSON.stringify(saveSlots));
+    }
+
+    // 保存当前游戏到选中槽
+    function saveGameToSlot() {
+      if(!gameMode) { slotFeedback.textContent = '没有进行中的游戏'; return; }
+      let snapshot = {
+        board: board.map(row => [...row]),
+        fixedMask: fixedMask.map(row => [...row]),
+        gameMode: gameMode,
+        difficulty: currentDifficulty,
+        history: history.slice() // 浅拷贝即可
+      };
+      saveSlots[selectedSlotIndex] = snapshot;
+      saveSlotsToStorage();
+      slotFeedback.textContent = `已保存至槽 S${selectedSlotIndex+1}`;
+      renderSlotButtons();
+    }
+
+    // 从选中槽加载
+    function loadGameFromSlot() {
+      let snapshot = saveSlots[selectedSlotIndex];
+      if(!snapshot) { slotFeedback.textContent = '该存档位为空'; return; }
+      // 恢复数据
+      board = snapshot.board.map(row => [...row]);
+      fixedMask = snapshot.fixedMask.map(row => [...row]);
+      gameMode = snapshot.gameMode;
+      currentDifficulty = snapshot.difficulty;
+      history = snapshot.history.slice();
+      selectedRow = selectedCol = -1;
+      
+      showGame();
+      renderBoard();
+      renderNumberPalette();
+      slotFeedback.textContent = `读取存档 S${selectedSlotIndex+1}`;
+      // 更新难度高亮
+      diffBtns.forEach(btn => {
+        if(btn.dataset.diff === currentDifficulty) btn.classList.add('selected');
+        else btn.classList.remove('selected');
+      });
+    }
+
+    // ---------- 数独生成 (简单挖洞) ----------
+    function generatePuzzle(difficulty) {
+      // 基础终盘 (固定一个简单终盘，保证合法)
+      const base = [
+        [5,3,4,6,7,8,9,1,2],
+        [6,7,2,1,9,5,3,4,8],
+        [1,9,8,3,4,2,5,6,7],
+        [8,5,9,4,2,6,7,3,1],
+        [4,2,6,8,5,3,1,9,0], // 故意放个0稍后修正
+        [7,1,3,9,0,4,8,2,5],
+        [9,6,1,5,3,7,2,8,4],
+        [2,8,7,4,1,9,6,5,3],
+        [3,4,5,2,8,6,1,7,9]
+      ];
+      // 简单修正(确保合法)
+      base[4][8] = 7; base[5][4] = 6;
+      let puzzle = base.map(row=>[...row]);
+      
+      let removeCount = difficulty==='easy'? 30 : (difficulty==='medium'? 45 : 55);
+      let positions = [];
+      for(let i=0;i<9;i++) for(let j=0;j<9;j++) positions.push([i,j]);
+      shuffleArray(positions);
+      for(let k=0; k<removeCount; k++) {
+        let [r,c] = positions[k];
+        puzzle[r][c] = 0;
+      }
+      return puzzle;
+    }
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    // 开始经典
+    function startClassic() {
+      gameMode = 'classic';
+      let puzzle = generatePuzzle(currentDifficulty);
+      board = puzzle.map(row => [...row]);
+      fixedMask = board.map(row => row.map(val => val !== 0));
+      history = [];
+      selectedRow = selectedCol = -1;
+      showGame();
+    }
+
+    function startCustom() {
+      gameMode = 'custom';
+      board = Array(9).fill().map(() => Array(9).fill(0));
+      fixedMask = Array(9).fill().map(() => Array(9).fill(false)); // 全部可编辑
+      history = [];
+      selectedRow = selectedCol = -1;
+      showGame();
+    }
+
+    // ---------- 渲染盘面 ----------
+    function renderBoard() {
+      let html = '';
+      for(let r=0; r<9; r++) {
+        html += '<tr>';
+        for(let c=0; c<9; c++) {
+          let val = board[r][c];
+          let isFixed = fixedMask[r][c];
+          let classes = [];
+          if(selectedRow===r && selectedCol===c) classes.push('selected-cell');
+          if(selectedRow!==-1 && (selectedRow===r || selectedCol===c || sameBlock(r,c,selectedRow,selectedCol))) classes.push('highlight-related');
+          let clsStr = classes.join(' ');
+          let digitClass = isFixed ? 'fixed-digit' : 'user-digit';
+          html += `<td class="${clsStr} ${digitClass}" data-row="${r}" data-col="${c}">${val!==0?val:''}</td>`;
         }
-        
-        // 重置游戏 (根据当前模式重置到初始盘面)
-        function resetToCurrentMode() {
-            if (currentMode === "normal") {
-                loadPuzzleFromMatrix(classicPuzzle);
-            } else if (currentMode === "custom") {
-                // 自定义模式重置：尝试从当前输入框内容载入，如果没有有效内容则清空全板并全可编辑
-                const customStr = customInput.value.trim();
-                if (customStr.length === 81 && /^[0-9]+$/.test(customStr)) {
-                    loadPuzzleFromString(customStr);
-                } else {
-                    // 无效就创建一个全0板，全可编辑
-                    createEmptyEditableBoard();
-                }
-            }
-            selectedRow = -1; selectedCol = -1;
-            drawBoard();
-            updateDigitsPanelAvailability(); // 无选中置灰数字栏
+        html += '</tr>';
+      }
+      sudokuGrid.innerHTML = html;
+    }
+    
+    function sameBlock(r1,c1,r2,c2) {
+      return Math.floor(r1/3)===Math.floor(r2/3) && Math.floor(c1/3)===Math.floor(c2/3);
+    }
+
+    // 候选数字条 + 禁用逻辑
+    function renderNumberPalette() {
+      let paletteHtml = '';
+      for(let num=1; num<=9; num++) {
+        let disabled = false;
+        if(selectedRow!==-1 && selectedCol!==-1) {
+          disabled = isNumberConflicting(num, selectedRow, selectedCol);
         }
-        
-        // 从矩阵加载 (并设置fixedMask)
-        function loadPuzzleFromMatrix(matrix) {
-            for (let i = 0; i < 9; i++) {
-                for (let j = 0; j < 9; j++) {
-                    const val = matrix[i][j];
-                    board[i][j] = val;
-                    fixedMask[i][j] = (val !== 0);
-                }
-            }
-        }
-        
-        // 从81位字符串加载 (0或点表示空格)
-        function loadPuzzleFromString(str) {
-            const flat = str.split('');
-            if (flat.length !== 81) return false;
-            let idx = 0;
-            for (let i = 0; i < 9; i++) {
-                for (let j = 0; j < 9; j++) {
-                    let ch = flat[idx];
-                    let num = 0;
-                    if (ch >= '1' && ch <= '9') num = parseInt(ch);
-                    else num = 0;
-                    board[i][j] = num;
-                    fixedMask[i][j] = (num !== 0);
-                    idx++;
-                }
-            }
-            drawBoard();
-            return true;
-        }
-        
-        // 全空可编辑板 (自定义模式起始空白)
-        function createEmptyEditableBoard() {
-            for (let i = 0; i < 9; i++) {
-                for (let j = 0; j < 9; j++) {
-                    board[i][j] = 0;
-                    fixedMask[i][j] = false;
-                }
-            }
-            drawBoard();
-        }
-        
-        // 清空所有非固定格子 (保留题目数字)
-        function clearNonFixedCells() {
-            for (let i = 0; i < 9; i++) {
-                for (let j = 0; j < 9; j++) {
-                    if (!fixedMask[i][j]) {
-                        board[i][j] = 0;
-                    }
-                }
-            }
-            drawBoard();
-            // 刷新数字栏可用性（基于当前选中格）
-            updateDigitsPanelAvailability();
-        }
-        
-        // 完全清空所有格子 (重置所有格可编辑) 但模式切换时按模式处理，这个清空按钮逻辑：清空所有格并且所有格子变成可编辑状态（重置固定掩码）
-        function fullClearAllCells() {
-            for (let i = 0; i < 9; i++) {
-                for (let j = 0; j < 9; j++) {
-                    board[i][j] = 0;
-                    fixedMask[i][j] = false;
-                }
-            }
-            drawBoard();
-            if (selectedRow !== -1 && selectedCol !== -1) {
-                updateDigitsPanelAvailability();
-            } else {
-                updateDigitsPanelAvailability();
-            }
-        }
-        
-        // 尝试在选中格子填入数字 (如果允许)
-        function tryPlaceNumber(num) {
-            if (selectedRow === -1 || selectedCol === -1) return false;
-            // 固定格子不可修改
-            if (fixedMask[selectedRow][selectedCol]) return false;
-            // 自动排除逻辑：不允许填入同行/列/宫已经存在的数字 (同样遵守排除)
-            const excluded = getExcludedNumbersForCell(selectedRow, selectedCol);
-            if (excluded.has(num)) {
-                // 有冲突，无法填入，轻轻反馈（可闪烁但不破坏）
-                return false;
-            }
-            // 合法填入
-            board[selectedRow][selectedCol] = num;
-            drawBoard();
-            // 填入后更新数字栏的排除状态（因为盘面变化了）
-            updateDigitsPanelAvailability();
-            return true;
-        }
-        
-        // 处理canvas点击获取坐标
-        function handleCanvasClick(e) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;   // canvas实际像素450 / 显示宽度
-            const scaleY = canvas.height / rect.height;
-            let clientX, clientY;
-            if (e.touches) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-                e.preventDefault();
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-            let canvasX = (clientX - rect.left) * scaleX;
-            let canvasY = (clientY - rect.top) * scaleY;
-            if (canvasX < 0) canvasX = 0;
-            if (canvasY < 0) canvasY = 0;
-            const cellSize = 450 / 9;
-            const col = Math.floor(canvasX / cellSize);
-            const row = Math.floor(canvasY / cellSize);
-            if (row >= 0 && row < 9 && col >= 0 && col < 9) {
-                selectedRow = row;
-                selectedCol = col;
-                drawBoard();
-                updateDigitsPanelAvailability();   // 根据新选中格子刷新数字栏禁用/启用
-            }
-        }
-        
-        // 初始化数字栏UI 1~9
-        function initDigitsPanel() {
-            digitsPanel.innerHTML = '';
-            for (let i = 1; i <= 9; i++) {
-                const btn = document.createElement('div');
-                btn.className = 'digit-btn';
-                btn.innerText = i;
-                btn.dataset.num = i;
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const num = parseInt(btn.dataset.num);
-                    if (btn.classList.contains('disabled-digit')) return; // 不可用
-                    tryPlaceNumber(num);
-                });
-                digitsPanel.appendChild(btn);
-                digitButtons.push(btn);
-            }
-        }
-        
-        // 切换模式
-        function setMode(mode) {
-            currentMode = mode;
-            if (mode === "normal") {
-                normalBtn.classList.add('mode-active');
-                customBtn.classList.remove('mode-active');
-                loadPuzzleFromMatrix(classicPuzzle);
-                selectedRow = -1; selectedCol = -1;
-                drawBoard();
-                updateDigitsPanelAvailability();
-                // 可同步修改输入框示例提示
-                customInput.placeholder = "经典模式已激活，下方输入自定义可切换";
-            } else {
-                normalBtn.classList.remove('mode-active');
-                customBtn.classList.add('mode-active');
-                // 自定义模式: 尝试从输入框加载，若无有效则空白板
-                const customStr = customInput.value.trim();
-                if (customStr.length === 81 && /^[0-9]+$/.test(customStr)) {
-                    loadPuzzleFromString(customStr);
-                } else {
-                    createEmptyEditableBoard();
-                }
-                selectedRow = -1; selectedCol = -1;
-                drawBoard();
-                updateDigitsPanelAvailability();
-            }
-        }
-        
-        // 载入自定义输入 (严格81位)
-        function applyCustomPuzzle() {
-            let raw = customInput.value.trim();
-            // 允许带空格或点号预处理
-            raw = raw.replace(/[^0-9]/g, '');
-            if (raw.length !== 81) {
-                alert(`无效的数独字符串！需要81个数字(0-9)，当前长度${raw.length}\n使用0或点表示空格。`);
-                return;
-            }
-            // 切换至自定义模式并载入
-            if (currentMode !== "custom") {
-                setMode("custom");
-            }
-            loadPuzzleFromString(raw);
-            selectedRow = -1; selectedCol = -1;
-            drawBoard();
-            updateDigitsPanelAvailability();
-        }
-        
-        // 事件绑定
-        function bindEvents() {
-            canvas.addEventListener('click', handleCanvasClick);
-            canvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                const rect = canvas.getBoundingClientRect();
-                const touch = e.touches[0];
-                const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY };
-                handleCanvasClick(fakeEvent);
-            });
-            normalBtn.addEventListener('click', () => setMode("normal"));
-            customBtn.addEventListener('click', () => setMode("custom"));
-            resetBtn.addEventListener('click', () => resetToCurrentMode());
-            clearBoardBtn.addEventListener('click', () => {
-                if (currentMode === "custom") {
-                    fullClearAllCells();
-                } else {
-                    // 经典模式清空所有用户填写（保留原始题目）
-                    for (let i = 0; i < 9; i++) {
-                        for (let j = 0; j < 9; j++) {
-                            if (!fixedMask[i][j]) board[i][j] = 0;
-                        }
-                    }
-                    drawBoard();
-                    updateDigitsPanelAvailability();
-                }
-            });
-            applyCustomBtn.addEventListener('click', applyCustomPuzzle);
-        }
-        
-        // 初始化整个应用
-        function init() {
-            initDigitsPanel();
-            bindEvents();
-            // 加载经典模式初始
-            loadPuzzleFromMatrix(classicPuzzle);
-            selectedRow = -1;
-            drawBoard();
-            updateDigitsPanelAvailability(); // 无选中灰色数字
-        }
-        
-        init();
-    })();
+        paletteHtml += `<div class="num-btn ${disabled?'disabled-num':''}" data-num="${num}">${num}</div>`;
+      }
+      numberPalette.innerHTML = paletteHtml;
+    }
+
+    function isNumberConflicting(num, row, col) {
+      // 检查行、列、宫是否已有相同数字 (忽略当前格)
+      for(let c=0; c<9; c++) if(c!==col && board[row][c]===num) return true;
+      for(let r=0; r<9; r++) if(r!==row && board[r][col]===num) return true;
+      let sr = Math.floor(row/3)*3, sc = Math.floor(col/3)*3;
+      for(let r=sr; r<sr+3; r++) for(let c=sc; c<sc+3; c++) if((r!==row||c!==col) && board[r][c]===num) return true;
+      return false;
+    }
+
+    // 填数字/清除
+    function setCellValue(row, col, value) {
+      if(fixedMask[row][col]) return; // 固定格不能修改
+      let oldVal = board[row][col];
+      if(oldVal === value) return;
+      // 记录历史
+      history.push({row, col, oldVal});
+      board[row][col] = value;
+      renderBoard();
+      renderNumberPalette();
+      gameStatus.textContent = '';
+    }
+
+    function undo() {
+      if(history.length===0) { gameStatus.textContent = '没有可撤回的操作'; return; }
+      let last = history.pop();
+      board[last.row][last.col] = last.oldVal;
+      renderBoard();
+      renderNumberPalette();
+    }
+
+    function clearSelectedCell() {
+      if(selectedRow===-1 || selectedCol===-1) return;
+      setCellValue(selectedRow, selectedCol, 0);
+    }
+
+    // ---------- 事件绑定 ----------
+    function init() {
+      loadSlotsFromStorage();
+      renderSlotButtons();
+      
+      // 难度切换
+      diffBtns.forEach(btn => btn.addEventListener('click', (e) => {
+        diffBtns.forEach(b=>b.classList.remove('selected'));
+        btn.classList.add('selected');
+        currentDifficulty = btn.dataset.diff;
+      }));
+      
+      document.getElementById('startClassicBtn').addEventListener('click', startClassic);
+      document.getElementById('startCustomBtn').addEventListener('click', startCustom);
+      document.getElementById('backHomeBtn').addEventListener('click', showHome);
+      
+      // 盘面点击
+      sudokuGrid.addEventListener('click', (e) => {
+        let td = e.target.closest('td');
+        if(!td) return;
+        let row = parseInt(td.dataset.row);
+        let col = parseInt(td.dataset.col);
+        selectedRow = row; selectedCol = col;
+        renderBoard();
+        renderNumberPalette();
+      });
+      
+      // 数字点击
+      numberPalette.addEventListener('click', (e) => {
+        let numDiv = e.target.closest('.num-btn');
+        if(!numDiv) return;
+        if(selectedRow===-1 || selectedCol===-1) { gameStatus.textContent = '请先选中一个格子'; return; }
+        let num = parseInt(numDiv.dataset.num);
+        if(isNumberConflicting(num, selectedRow, selectedCol)) { gameStatus.textContent = '数字冲突'; return; }
+        setCellValue(selectedRow, selectedCol, num);
+      });
+      
+      document.getElementById('undoBtn').addEventListener('click', undo);
+      document.getElementById('clearCellBtn').addEventListener('click', clearSelectedCell);
+      
+      document.getElementById('saveToSlotBtn').addEventListener('click', saveGameToSlot);
+      document.getElementById('loadFromSlotBtn').addEventListener('click', loadGameFromSlot);
+      
+      // 默认显示首页
+      showHome();
+    }
+    
+    init();
+  })();
 </script>
 </body>
 </html>
